@@ -10,10 +10,14 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#1e40af',
-                        secondary: '#3b82f6',
-                        accent: '#10b981',
-                        danger: '#ef4444'
+                        primary: '#10b981',
+                        'primary-light': '#34d399',
+                        'primary-dark': '#059669',
+                        secondary: '#6366f1',
+                        accent: '#8b5cf6',
+                        danger: '#ef4444',
+                        'gray-light': '#f8fafc',
+                        'gray-medium': '#64748b'
                     }
                 }
             }
@@ -22,14 +26,15 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
         }
         .card-hover {
             transition: all 0.3s ease;
+            border-radius: 20px;
         }
         .card-hover:hover {
             transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.1), 0 10px 10px -5px rgba(16, 185, 129, 0.04);
         }
         .pulse-dot {
             animation: pulse 2s infinite;
@@ -57,6 +62,7 @@
             top: 0.25rem;
             left: 0.25rem;
             transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .toggle-switch:checked::before {
             transform: translateX(1.5rem);
@@ -73,23 +79,72 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+            transform: translateY(-1px);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-1px);
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1), 0 2px 4px -1px rgba(16, 185, 129, 0.06);
+            border: 1px solid rgba(16, 185, 129, 0.1);
+        }
+        .input-field {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .input-field:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <nav class="bg-white shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4">
+    <nav class="bg-white shadow-lg sticky top-0 z-50 border-b border-primary/10">
+        <div class="container mx-auto px-6 py-4">
             <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
                         CT
                     </div>
-                    <h1 class="text-2xl font-bold text-gray-800">Copy Trading Platform</h1>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">Copy Trading Platform</h1>
+                        <p class="text-sm text-gray-medium">Slim en betrouwbaar beleggen met AI</p>
+                    </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-3 h-3 bg-green-500 rounded-full pulse-dot"></div>
-                        <span class="text-sm text-gray-600">Live Connected</span>
+                    <div class="flex items-center space-x-3 bg-green-50 px-4 py-2 rounded-full">
+                        <div class="w-3 h-3 bg-primary rounded-full pulse-dot"></div>
+                        <span class="text-sm font-medium text-primary-dark">Live Verbonden</span>
                     </div>
                 </div>
             </div>
@@ -97,17 +152,20 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-6 py-8">
         <!-- Status Banner -->
-        <div id="status-banner" class="mb-8 p-6 rounded-xl shadow-lg card-hover bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div id="status-banner" class="mb-8 p-8 card card-hover gradient-bg text-white">
             <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-bold mb-2">Copy Trading Status</h2>
-                    <p id="status-text" class="text-blue-100">Klaar om te beginnen</p>
+                <div class="flex-1">
+                    <h2 class="text-3xl font-bold mb-3">Copy Trading Status</h2>
+                    <p id="status-text" class="text-lg opacity-90">Klaar om te beginnen met automatisch beleggen</p>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <label class="flex items-center space-x-3 cursor-pointer">
-                        <span class="text-lg font-semibold">AAN/UIT</span>
+                <div class="flex items-center space-x-6">
+                    <div class="text-right mr-4">
+                        <div class="text-sm opacity-75">Master Toggle</div>
+                        <div class="text-lg font-semibold">AAN/UIT</div>
+                    </div>
+                    <label class="flex items-center cursor-pointer">
                         <input type="checkbox" id="main-toggle" class="toggle-switch" disabled>
                     </label>
                 </div>
@@ -116,25 +174,32 @@
 
         <div class="grid lg:grid-cols-3 gap-8">
             <!-- Account Setup -->
-            <div class="lg:col-span-2">
+            <div class="lg:col-span-2 space-y-6">
                 <!-- MT5 Account Card -->
-                <div class="bg-white rounded-xl shadow-lg p-6 mb-6 card-hover">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-xl font-bold text-gray-800 flex items-center">
-                            <i class="fas fa-link mr-3 text-blue-500"></i>
-                            Mijn MT5 Account
-                        </h3>
-                        <span id="account-limit" class="text-sm text-gray-500">Max 1 account</span>
+                <div class="card p-8 card-hover">
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-link text-primary text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold text-gray-800">Mijn MT5 Account</h3>
+                                <p class="text-gray-medium">Verbind uw trading account voor automatisch kopiëren</p>
+                            </div>
+                        </div>
+                        <div class="bg-primary/5 px-3 py-1 rounded-full">
+                            <span class="text-sm font-medium text-primary-dark">Max 1 account</span>
+                        </div>
                     </div>
 
                     <!-- Account Form (shown when no account) -->
                     <div id="account-form" class="space-y-6">
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-server mr-2"></i>Broker Server
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <i class="fas fa-server mr-2 text-primary"></i>Broker Server
                                 </label>
-                                <select id="broker-select" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <select id="broker-select" class="w-full px-4 py-4 input-field text-gray-700">
                                     <option value="">Selecteer broker...</option>
                                     <option value="AdmiralsGroup-Demo">AdmiralsGroup-Demo</option>
                                     <option value="NagaMarkets-Live">NagaMarkets-Live</option>
@@ -143,30 +208,32 @@
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-user mr-2"></i>MT5 Login
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <i class="fas fa-user mr-2 text-primary"></i>MT5 Login
                                 </label>
-                                <input type="text" id="login-input" placeholder="Bijvoorbeeld: 8313355" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <input type="text" id="login-input" placeholder="Bijvoorbeeld: 8313355" class="w-full px-4 py-4 input-field">
                             </div>
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-lock mr-2"></i>MT5 Wachtwoord
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                <i class="fas fa-lock mr-2 text-primary"></i>MT5 Wachtwoord
                             </label>
-                            <input type="password" id="password-input" placeholder="Uw MT5 master wachtwoord" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <p class="text-sm text-gray-500 mt-2">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                Gebruik uw master wachtwoord, niet het investor wachtwoord
-                            </p>
+                            <input type="password" id="password-input" placeholder="Uw MT5 master wachtwoord" class="w-full px-4 py-4 input-field">
+                            <div class="mt-3 p-3 bg-blue-50 rounded-lg">
+                                <p class="text-sm text-blue-700 flex items-start">
+                                    <i class="fas fa-info-circle mr-2 mt-0.5 text-blue-500"></i>
+                                    <span>Gebruik uw <strong>master wachtwoord</strong>, niet het investor wachtwoord. Dit geeft de software toegang tot automatisch handelen.</span>
+                                </p>
+                            </div>
                         </div>
 
-                        <div class="flex space-x-4">
-                            <button id="test-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <button id="test-btn" class="btn-secondary text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center">
                                 <i class="fas fa-vial mr-2"></i>
                                 Test Verbinding
                             </button>
-                            <button id="connect-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                            <button id="connect-btn" class="btn-primary text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center">
                                 <i class="fas fa-plug mr-2"></i>
                                 Verbind Account
                             </button>
@@ -175,36 +242,65 @@
 
                     <!-- Connected Account (shown when account exists) -->
                     <div id="connected-account" class="hidden">
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                        <div class="bg-green-50 border-2 border-primary/20 rounded-xl p-6 mb-6">
                             <div class="flex items-center justify-between">
-                                <div>
-                                    <div class="flex items-center text-green-800 font-semibold mb-1">
-                                        <i class="fas fa-check-circle mr-2"></i>
-                                        Account Verbonden
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+                                        <i class="fas fa-check text-white text-xl"></i>
                                     </div>
-                                    <div class="text-sm text-green-700">
-                                        <div>Broker: <span id="connected-broker"></span></div>
-                                        <div>Login: <span id="connected-login"></span></div>
-                                        <div>Status: <span id="connected-status"></span></div>
+                                    <div>
+                                        <div class="font-bold text-primary-dark text-lg mb-1">Account Succesvol Verbonden</div>
+                                        <div class="space-y-1 text-sm text-gray-700">
+                                            <div><span class="font-medium">Broker:</span> <span id="connected-broker" class="font-semibold"></span></div>
+                                            <div><span class="font-medium">Login:</span> <span id="connected-login" class="font-semibold"></span></div>
+                                            <div><span class="font-medium">Status:</span> <span id="connected-status" class="font-semibold text-primary"></span></div>
+                                        </div>
                                     </div>
                                 </div>
-                                <button id="remove-account" class="text-red-600 hover:text-red-800 p-2">
-                                    <i class="fas fa-trash"></i>
+                                <button id="remove-account" class="text-red-500 hover:text-red-700 p-3 rounded-lg hover:bg-red-50 transition-all">
+                                    <i class="fas fa-trash text-xl"></i>
                                 </button>
                             </div>
                         </div>
 
                         <!-- Copy Trading Controls -->
                         <div class="grid md:grid-cols-2 gap-4">
-                            <button id="start-copy" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                            <button id="start-copy" class="btn-primary text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center">
                                 <i class="fas fa-play mr-2"></i>
                                 Start Kopiëren
                             </button>
-                            <button id="stop-copy" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                            <button id="stop-copy" class="btn-danger text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center">
                                 <i class="fas fa-stop mr-2"></i>
                                 Stop Kopiëren
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Features Cards -->
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="card p-6 text-center card-hover">
+                        <div class="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-robot text-primary text-2xl"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800 mb-2">Volledig Automatisch</h4>
+                        <p class="text-sm text-gray-medium">Trades worden automatisch gekopieerd zonder handmatige tussenkomst</p>
+                    </div>
+                    
+                    <div class="card p-6 text-center card-hover">
+                        <div class="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-shield-alt text-primary text-2xl"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800 mb-2">Veilig & Betrouwbaar</h4>
+                        <p class="text-sm text-gray-medium">Uw geld blijft veilig op uw eigen trading account</p>
+                    </div>
+                    
+                    <div class="card p-6 text-center card-hover">
+                        <div class="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-chart-line text-primary text-2xl"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800 mb-2">Professionele Strategie</h4>
+                        <p class="text-sm text-gray-medium">Volg bewezen EUR trading strategieën van experts</p>
                     </div>
                 </div>
             </div>
@@ -212,64 +308,70 @@
             <!-- Sidebar -->
             <div class="space-y-6">
                 <!-- Trading Status -->
-                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-chart-line mr-3 text-green-500"></i>
-                        Trading Status
-                    </h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Status:</span>
-                            <span id="copy-status" class="font-semibold text-gray-500">Inactief</span>
+                <div class="card p-6 card-hover">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-chart-line text-primary"></i>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Strategy:</span>
-                            <span class="font-semibold text-blue-600">67ko (EUR)</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Laatste sync:</span>
-                            <span id="last-sync" class="font-semibold text-gray-500">Nooit</span>
-                        </div>
+                        <h3 class="text-xl font-bold text-gray-800">Trading Status</h3>
                     </div>
-                </div>
-
-                <!-- Help & Support -->
-                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-question-circle mr-3 text-blue-500"></i>
-                        Hulp Nodig?
-                    </h3>
-                    <div class="space-y-3">
-                        <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm flex items-center">
-                            <i class="fas fa-video mr-2"></i>
-                            Bekijk video tutorial
-                        </a>
-                        <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm flex items-center">
-                            <i class="fas fa-book mr-2"></i>
-                            Lees handleiding
-                        </a>
-                        <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm flex items-center">
-                            <i class="fas fa-comments mr-2"></i>
-                            Live chat support
-                        </a>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-medium font-medium">Status:</span>
+                            <span id="copy-status" class="font-bold text-gray-500 px-3 py-1 rounded-full bg-gray-100 text-sm">Inactief</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-medium font-medium">Strategy:</span>
+                            <span class="font-bold text-primary bg-primary/10 px-3 py-1 rounded-full text-sm">67ko (EUR)</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-medium font-medium">Laatste sync:</span>
+                            <span id="last-sync" class="font-semibold text-gray-600 text-sm">Nooit</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Quick Actions -->
-                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-bolt mr-3 text-yellow-500"></i>
-                        Snelle Acties
-                    </h3>
+                <div class="card p-6 card-hover">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-bolt text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800">Snelle Acties</h3>
+                    </div>
                     <div class="space-y-3">
-                        <button id="sync-now" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center">
+                        <button id="sync-now" class="w-full btn-primary text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center">
                             <i class="fas fa-sync mr-2"></i>
                             Synchroniseer Nu
                         </button>
-                        <button id="check-status" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center">
+                        <button id="check-status" class="w-full btn-secondary text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center">
                             <i class="fas fa-search mr-2"></i>
                             Check Status
                         </button>
+                    </div>
+                </div>
+
+                <!-- Help & Support -->
+                <div class="card p-6 card-hover">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-question-circle text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800">Hulp & Support</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <a href="#" class="block text-primary hover:text-primary-dark text-sm font-medium flex items-center py-2 px-3 rounded-lg hover:bg-primary/5 transition-all">
+                            <i class="fas fa-video mr-3"></i>
+                            Video Tutorial
+                        </a>
+                        <a href="#" class="block text-primary hover:text-primary-dark text-sm font-medium flex items-center py-2 px-3 rounded-lg hover:bg-primary/5 transition-all">
+                            <i class="fas fa-book mr-3"></i>
+                            Handleiding
+                        </a>
+                        <a href="#" class="block text-primary hover:text-primary-dark text-sm font-medium flex items-center py-2 px-3 rounded-lg hover:bg-primary/5 transition-all">
+                            <i class="fas fa-comments mr-3"></i>
+                            Live Chat
+                        </a>
                     </div>
                 </div>
             </div>
@@ -280,19 +382,19 @@
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-4"></div>
 
     <!-- Confirmation Modal -->
-    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-        <div class="bg-white rounded-xl p-6 max-w-md w-mx-4">
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 card">
             <div class="text-center">
-                <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                <div class="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-3xl"></i>
                 </div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Account Verwijderen</h3>
-                <p class="text-gray-600 mb-6">Weet je zeker dat je dit MT5 account wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</p>
-                <div class="flex space-x-4">
-                    <button id="modal-cancel" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Account Verwijderen</h3>
+                <p class="text-gray-600 mb-8">Weet je zeker dat je dit MT5 account wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt en al je copy trading wordt gestopt.</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="modal-cancel" class="btn-secondary text-white font-bold py-3 px-6 rounded-xl transition-all">
                         Annuleer
                     </button>
-                    <button id="modal-confirm" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                    <button id="modal-confirm" class="btn-danger text-white font-bold py-3 px-6 rounded-xl transition-all">
                         Verwijder
                     </button>
                 </div>
@@ -370,27 +472,29 @@
                 // Show connected account info
                 document.getElementById('connected-broker').textContent = currentAccount.broker || 'Onbekend';
                 document.getElementById('connected-login').textContent = currentAccount.login || 'Onbekend';
-                document.getElementById('connected-status').textContent = currentAccount.isActive ? 'Actief' : 'Inactief';
+                document.getElementById('connected-status').textContent = currentAccount.isActive ? 'Actief Kopiëren' : 'Inactief';
                 
                 // Update status
-                document.getElementById('copy-status').textContent = currentAccount.isActive ? 'Actief' : 'Inactief';
-                document.getElementById('copy-status').className = currentAccount.isActive 
-                    ? 'font-semibold text-green-600' 
-                    : 'font-semibold text-gray-500';
+                const copyStatus = document.getElementById('copy-status');
+                if (currentAccount.isActive) {
+                    copyStatus.textContent = 'Actief';
+                    copyStatus.className = 'font-bold text-primary bg-primary/10 px-3 py-1 rounded-full text-sm';
+                } else {
+                    copyStatus.textContent = 'Inactief';
+                    copyStatus.className = 'font-bold text-gray-500 px-3 py-1 rounded-full bg-gray-100 text-sm';
+                }
                 
                 // Update main status banner
                 const statusText = document.getElementById('status-text');
                 if (currentAccount.isActive) {
-                    statusText.textContent = 'Copy Trading is ACTIEF - Trades worden automatisch gekopieerd';
-                    statusText.className = 'text-green-100';
+                    statusText.textContent = 'Copy Trading is ACTIEF - Trades worden automatisch gekopieerd van professionele strategie';
                 } else {
-                    statusText.textContent = 'Copy Trading is GESTOPT - Geen trades worden gekopieerd';
-                    statusText.className = 'text-red-200';
+                    statusText.textContent = 'Copy Trading is GESTOPT - Schakel de toggle in om automatisch te beginnen kopiëren';
                 }
                 
                 mainToggle.checked = currentAccount.isActive;
             } else {
-                document.getElementById('status-text').textContent = 'Verbind eerst uw MT5 account om te beginnen';
+                document.getElementById('status-text').textContent = 'Verbind eerst uw MT5 account om te beginnen met automatisch beleggen';
                 document.getElementById('copy-status').textContent = 'Geen account';
                 mainToggle.checked = false;
             }
@@ -409,7 +513,7 @@
             const password = document.getElementById('password-input').value;
             
             if (!broker || !login || !password) {
-                showToast('Vul alle velden in', 'error');
+                showToast('Vul alle velden in voordat u test', 'warning');
                 return;
             }
             
@@ -435,12 +539,12 @@
                 const data = await response.json();
                 
                 if (data.ok) {
-                    showToast('Verbinding geslaagd! Account kan worden toegevoegd.', 'success');
+                    showToast('Verbinding geslaagd! Account gegevens zijn correct.', 'success');
                 } else {
-                    showToast(`Test mislukt: ${data.error || 'Onbekende fout'}`, 'error');
+                    showToast(`Test mislukt: ${data.error || 'Controleer uw inloggegevens'}`, 'error');
                 }
             } catch (error) {
-                showToast(`Netwerkfout: ${error.message}`, 'error');
+                showToast(`Verbindingsfout: ${error.message}`, 'error');
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -453,7 +557,7 @@
             const password = document.getElementById('password-input').value;
             
             if (!broker || !login || !password) {
-                showToast('Vul alle velden in', 'error');
+                showToast('Vul alle velden in om door te gaan', 'warning');
                 return;
             }
             
@@ -488,14 +592,14 @@
                     };
                     
                     saveAccount(account);
-                    showToast('Account succesvol verbonden!', 'success');
+                    showToast('Account succesvol verbonden! U kunt nu copy trading activeren.', 'success');
                     
                     // Clear form
                     document.getElementById('broker-select').value = '';
                     document.getElementById('login-input').value = '';
                     document.getElementById('password-input').value = '';
                 } else {
-                    showToast(`Verbinden mislukt: ${data.error || 'Onbekende fout'}`, 'error');
+                    showToast(`Verbinden mislukt: ${data.error || 'Er ging iets mis, probeer opnieuw'}`, 'error');
                 }
             } catch (error) {
                 showToast(`Netwerkfout: ${error.message}`, 'error');
@@ -530,9 +634,9 @@
                 if (data.ok) {
                     currentAccount.isActive = true;
                     saveAccount(currentAccount);
-                    showToast('Copy trading gestart!', 'success');
+                    showToast('Copy trading succesvol gestart! Trades worden nu automatisch gekopieerd.', 'success');
                 } else {
-                    showToast(`Starten mislukt: ${data.error || 'Onbekende fout'}`, 'error');
+                    showToast(`Starten mislukt: ${data.error || 'Er ging iets mis'}`, 'error');
                 }
             } catch (error) {
                 showToast(`Netwerkfout: ${error.message}`, 'error');
@@ -564,9 +668,9 @@
                 if (data.ok) {
                     currentAccount.isActive = false;
                     saveAccount(currentAccount);
-                    showToast('Copy trading gestopt!', 'success');
+                    showToast('Copy trading succesvol gestopt.', 'success');
                 } else {
-                    showToast(`Stoppen mislukt: ${data.error || 'Onbekende fout'}`, 'error');
+                    showToast(`Stoppen mislukt: ${data.error || 'Er ging iets mis'}`, 'error');
                 }
             } catch (error) {
                 showToast(`Netwerkfout: ${error.message}`, 'error');
@@ -605,7 +709,7 @@
                     currentAccount.isActive = hasSubscription;
                     saveAccount(currentAccount);
                     
-                    showToast(`Status: ${status}, Copy trading: ${hasSubscription ? 'Actief' : 'Inactief'}`, 'info');
+                    showToast(`Account status: ${status === 'CONNECTED' ? 'Verbonden' : status}, Copy trading: ${hasSubscription ? 'Actief' : 'Inactief'}`, 'info');
                     updateLastSync();
                 } else {
                     showToast(`Status check mislukt: ${data.error}`, 'error');
@@ -620,7 +724,7 @@
 
         function syncNow() {
             checkAccountStatus();
-            showToast('Account status gesynchroniseerd', 'info');
+            showToast('Account status wordt gesynchroniseerd...', 'info');
         }
 
         function showRemoveModal() {
@@ -634,15 +738,15 @@
         function confirmRemoveAccount() {
             removeAccount();
             hideRemoveModal();
-            showToast('Account verwijderd', 'info');
+            showToast('Account succesvol verwijderd', 'info');
         }
 
         function showToast(message, type = 'info') {
             const colors = {
-                success: 'bg-green-500',
-                error: 'bg-red-500',
-                info: 'bg-blue-500',
-                warning: 'bg-yellow-500'
+                success: 'bg-primary text-white',
+                error: 'bg-red-500 text-white',
+                info: 'bg-blue-500 text-white',
+                warning: 'bg-yellow-500 text-white'
             };
             
             const icons = {
@@ -653,10 +757,10 @@
             };
             
             const toast = document.createElement('div');
-            toast.className = `${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 transform translate-x-full transition-transform duration-300`;
+            toast.className = `${colors[type]} px-6 py-4 rounded-xl shadow-lg flex items-center space-x-3 transform translate-x-full transition-transform duration-300 max-w-sm`;
             toast.innerHTML = `
-                <i class="fas ${icons[type]}"></i>
-                <span>${message}</span>
+                <i class="fas ${icons[type]} text-lg"></i>
+                <span class="font-medium">${message}</span>
             `;
             
             const container = document.getElementById('toast-container');
@@ -665,11 +769,15 @@
             // Animate in
             setTimeout(() => toast.classList.remove('translate-x-full'), 100);
             
-            // Remove after 4 seconds
+            // Remove after 5 seconds
             setTimeout(() => {
                 toast.classList.add('translate-x-full');
-                setTimeout(() => container.removeChild(toast), 300);
-            }, 4000);
+                setTimeout(() => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 300);
+            }, 5000);
         }
 
         // Auto-refresh every 30 seconds if account is connected
