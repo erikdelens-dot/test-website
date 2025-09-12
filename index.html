@@ -600,6 +600,12 @@
                     document.getElementById('broker-select').value = '';
                     document.getElementById('login-input').value = '';
                     document.getElementById('password-input').value = '';
+                    
+                    // Force show dashboard after successful connection
+                    setTimeout(() => {
+                        document.getElementById('trading-dashboard').classList.remove('hidden');
+                        refreshAccountData();
+                    }, 500);
                 } else {
                     showToast(`Verbinden mislukt: ${data.error || 'Er ging iets mis, probeer opnieuw'}`, 'error');
                 }
