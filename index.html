@@ -18,564 +18,7 @@
                         danger: '#ef4444',
                         'gray-light': '#f8fafc',
                         'gray-medium': '#64748b'
-            
-        function loadSavedAccount() {
-            const saved = localStorage.getItem('tradingAccount');
-            if (saved) {
-                currentAccount = JSON.parse(saved);
-                updateUI();
-                checkAccountStatus(); // Auto-check status on load
-            }
-        }
-
-        function saveAccount(account) {
-            currentAccount = account;
-            localStorage.setItem('tradingAccount', JSON.stringify(account));
-            updateUI();
-        }
-
-        function removeAccount() {
-            currentAccount = null;
-            localStorage.removeItem('tradingAccount');
-            updateUI();
-        }
-
-        function updateUI() {
-            const hasAccount = !!currentAccount;
-            
-            // Toggle form/connected view
-            document.getElementById('account-form').classList.toggle('hidden', hasAccount);
-            document.getElementById('connected-account').classList.toggle('hidden', !hasAccount);
-            document.getElementById('account-dashboard').classList.toggle('hidden', !hasAccount);
-            document.getElementById('features-cards').classList.toggle('hidden', hasAccount);
-            
-            // Update main toggle
-            const mainToggle = document.getElementById('main-toggle');
-            mainToggle.disabled = !hasAccount;
-            
-            // Update status banner styling
-            const statusBanner = document.getElementById('status-banner');
-            
-            if (hasAccount) {
-                // Show connected account info
-                document.getElementById('connected-broker').textContent = currentAccount.broker || 'Onbekend';
-                document.getElementById('connected-login').textContent = currentAccount.login || 'Onbekend';
-                document.getElementById('connected-status').textContent = currentAccount.isActive ? 'Systeem Actief' : 'Systeem Inactief';
-                
-                // Update status
-                const copyStatus = document.getElementById('copy-status');
-                if (currentAccount.isActive) {
-                    copyStatus.textContent = 'Actief';
-                    copyStatus.className = 'font-bold text-primary bg-primary/10 px-3 py-1 rounded-full text-sm';
-                } else {
-                    copyStatus.textContent = 'Inactief';
-                    copyStatus.className = 'font-bold text-gray-500 px-3 py-1 rounded-full bg-gray-100 text-sm';
-                }
-                
-                // Update main status banner
-                const statusText = document.getElementById('status-text');
-                if (currentAccount.isActive) {
-                    statusText.textContent = 'Het systeem is ACTIEF op uw rekening - Trades worden automatisch uitgevoerd';
-                    statusBanner.className = 'mb-8 p-8 card card-hover gradient-bg text-white';
-                } else {
-                    statusText.textContent = 'Het systeem is NIET actief op uw rekening - Klik hier naast op de knop om het systeem te activeren op uw rekening';
-                    statusBanner.className = 'mb-8 p-8 card card-hover gradient-bg-inactive text-white';
-                }
-                
-                mainToggle.checked = currentAccount.isActive;
-                
-                // Load account metrics if we have an account
-                refreshAccountMetrics();
-            } else {
-                document.getElementById('status-text').textContent = 'Verbind uw trading account om het systeem te activeren';
-                document.getElementById('copy-status').textContent = 'Geen account';
-                statusBanner.className = 'mb-8 p-8 card card-hover gradient-bg-inactive text-white';
-                mainToggle.checked = false;
-            }
-            
-            updateLastSync();
-        }
-
-        function updateLastSync() {
-            const now = new Date();
-            document.getElementById('last-sync').textContent = now.toLocaleTimeString('nl-NL');
-        }
-
-        async function refreshAccountMetrics() {
-            if (!currentAccount) return;
-            
-            try {
-                const response = await fetch(`${API_BASE}/account-metrics?id=${currentAccount.id}`);
-                const data = await response.json();
-                
-                if (data.ok && data.info) {
-                    accountMetrics = data.info;
-                    updateAccountMetricsUI(data.info, data.counts);
-                    generateMockBalanceHistory();
-                } else {
-                    console.warn('Account metrics not available:', data.error || 'Unknown error');
-                    updateAccountMetricsUI(null, null);
-                }
-            } catch (error) {
-                console.error('Error fetching account metrics:', error);
-                updateAccountMetricsUI(null, null);
-            }
-        }
-
-        function updateAccountMetricsUI(info, counts) {
-            if (info) {
-                document.getElementById('account-balance').textContent = formatCurrency(info.balance || 0);
-                document.getElementById('account-equity').textContent = formatCurrency(info.equity || 0);
-                
-                const profitLoss = (info.equity || 0) - (info.balance || 0);
-                const profitLossElement = document.getElementById('profit-loss');
-                profitLossElement.textContent = formatCurrency(profitLoss);
-                profitLossElement.style.color = profitLoss >= 0 ? '#10b981' : '#ef4444';
-                
-                document.getElementById('open-positions').textContent = counts?.positions || 0;
-                document.getElementById('positions-count').textContent = `${counts?.positions || 0} posities`;
-                
-                document.getElementById('balance-change').textContent = 'Vandaag';
-                document.getElementById('equity-change').textContent = 'Live waarde';
-                
-                updatePositionsList([]);
-            } else {
-                document.getElementById('account-balance').textContent = 'Laden...';
-                document.getElementById('account-equity').textContent = 'Laden...';
-                document.getElementById('profit-loss').textContent = 'Laden...';
-                document.getElementById('open-positions').textContent = '--';
-                document.getElementById('positions-count').textContent = '-- posities';
-            }
-        }
-
-        function updatePositionsList(positions) {
-            const positionsList = document.getElementById('positions-list');
-            
-            if (!positions || positions.length === 0) {
-                positionsList.innerHTML = `
-                    <div class="text-center py-8 text-gray-500">
-                        <i class="fas fa-chart-line text-4xl mb-4 opacity-50"></i>
-                        <p>Geen open posities</p>
-                        <p class="text-sm mt-2">Posities verschijnen hier als het systeem actief is</p>
-                    </div>
-                `;
-                return;
-            }
-
-            positionsList.innerHTML = positions.map(position => `
-                <div class="bg-gray-50 rounded-lg p-4 flex justify-between items-center">
-                    <div>
-                        <div class="font-semibold">${position.symbol}</div>
-                        <div class="text-sm text-gray-600">${position.type} • Volume: ${position.volume}</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-semibold ${position.profit >= 0 ? 'text-primary' : 'text-red-500'}">
-                            ${formatCurrency(position.profit)}
-                        </div>
-                        <div class="text-sm text-gray-600">${position.profit >= 0 ? '+' : ''}${((position.profit / position.investment) * 100).toFixed(2)}%</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function generateMockBalanceHistory() {
-            const days = 30;
-            const baseBalance = accountMetrics?.balance || 10000;
-            const data = [];
-            const labels = [];
-            
-            for (let i = days; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                labels.push(date.toLocaleDateString('nl-NL', { month: 'short', day: 'numeric' }));
-                
-                const variation = (Math.random() - 0.5) * 0.02;
-                const growth = i === days ? 0 : 0.001;
-                const balance = baseBalance * (1 + (days - i) * growth + variation);
-                data.push(Math.max(balance, baseBalance * 0.9));
-            }
-            
-            updateBalanceChart('30', labels, data);
-        }
-
-        function updateBalanceChart(period, labels = null, data = null) {
-            const ctx = document.getElementById('balanceChart').getContext('2d');
-            
-            if (balanceChart) {
-                balanceChart.destroy();
-            }
-            
-            if (!labels || !data) {
-                const days = parseInt(period);
-                labels = [];
-                data = [];
-                const baseBalance = accountMetrics?.balance || 10000;
-                
-                for (let i = days; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    labels.push(date.toLocaleDateString('nl-NL', { month: 'short', day: 'numeric' }));
-                    
-                    const variation = (Math.random() - 0.5) * 0.01;
-                    const growth = 0.0005;
-                    const balance = baseBalance * (1 + (days - i) * growth + variation);
-                    data.push(Math.max(balance, baseBalance * 0.95));
-                }
-            }
-            
-            balanceChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Account Saldo',
-                        data: data,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            ticks: {
-                                callback: function(value) {
-                                    return '€' + value.toLocaleString('nl-NL');
-                                }
-                            },
-                            grid: {
-                                color: 'rgba(0,0,0,0.05)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    elements: {
-                        point: {
-                            radius: 0,
-                            hoverRadius: 6
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
                     }
-                }
-            });
-        }
-
-        async function testConnection() {
-            const broker = document.getElementById('broker-select').value;
-            const login = document.getElementById('login-input').value;
-            const password = document.getElementById('password-input').value;
-            
-            if (!broker || !login || !password) {
-                showToast('Vul alle velden in voordat u test', 'warning');
-                return;
-            }
-            
-            const btn = document.getElementById('test-btn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<div class="loading mr-2"></div>Testen...';
-            btn.disabled = true;
-            
-            try {
-                const response = await fetch(`${API_BASE}/link-account`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        brokerServer: broker,
-                        login: login,
-                        password: password,
-                        baseCurrency: 'EUR',
-                        copyFactoryRoles: ['SUBSCRIBER'],
-                        dryRun: true
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.ok) {
-                    showToast('Verbinding geslaagd! Account gegevens zijn correct.', 'success');
-                } else {
-                    showToast(`Test mislukt: ${data.error || 'Controleer uw inloggegevens'}`, 'error');
-                }
-            } catch (error) {
-                showToast(`Verbindingsfout: ${error.message}`, 'error');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        async function connectAccount() {
-            const broker = document.getElementById('broker-select').value;
-            const login = document.getElementById('login-input').value;
-            const password = document.getElementById('password-input').value;
-            
-            if (!broker || !login || !password) {
-                showToast('Vul alle velden in om door te gaan', 'warning');
-                return;
-            }
-            
-            const btn = document.getElementById('connect-btn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<div class="loading mr-2"></div>Verbinden...';
-            btn.disabled = true;
-            
-            try {
-                const response = await fetch(`${API_BASE}/link-account`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        brokerServer: broker,
-                        login: login,
-                        password: password,
-                        baseCurrency: 'EUR',
-                        copyFactoryRoles: ['SUBSCRIBER'],
-                        dryRun: false
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.ok) {
-                    const account = {
-                        id: data.accountId,
-                        broker: broker,
-                        login: login,
-                        isActive: false,
-                        dateAdded: new Date().toISOString()
-                    };
-                    
-                    saveAccount(account);
-                    showToast('Account succesvol verbonden! U kunt nu het systeem activeren.', 'success');
-                    
-                    document.getElementById('broker-select').value = '';
-                    document.getElementById('login-input').value = '';
-                    document.getElementById('password-input').value = '';
-                } else {
-                    showToast(`Verbinden mislukt: ${data.error || 'Er ging iets mis, probeer opnieuw'}`, 'error');
-                }
-            } catch (error) {
-                showToast(`Netwerkfout: ${error.message}`, 'error');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        async function startCopyTrading() {
-            if (!currentAccount) return;
-            
-            const btn = document.getElementById('start-copy');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<div class="loading mr-2"></div>Systeem Starten...';
-            btn.disabled = true;
-            
-            try {
-                const response = await fetch(`${API_BASE}/copy/start`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        accountId: currentAccount.id,
-                        strategy: STRATEGY_ID,
-                        multiplier: 1.0,
-                        mirrorOpenTrades: true
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.ok) {
-                    currentAccount.isActive = true;
-                    saveAccount(currentAccount);
-                    showToast('Het systeem is succesvol gestart! Trades worden nu automatisch uitgevoerd.', 'success');
-                } else {
-                    showToast(`Systeem starten mislukt: ${data.error || 'Er ging iets mis'}`, 'error');
-                }
-            } catch (error) {
-                showToast(`Netwerkfout: ${error.message}`, 'error');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        async function stopCopyTrading() {
-            if (!currentAccount) return;
-            
-            const btn = document.getElementById('stop-copy');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<div class="loading mr-2"></div>Systeem Stoppen...';
-            btn.disabled = true;
-            
-            try {
-                const response = await fetch(`${API_BASE}/copy/stop`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        accountId: currentAccount.id
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.ok) {
-                    currentAccount.isActive = false;
-                    saveAccount(currentAccount);
-                    showToast('Het systeem is succesvol gestopt.', 'success');
-                } else {
-                    showToast(`Systeem stoppen mislukt: ${data.error || 'Er ging iets mis'}`, 'error');
-                }
-            } catch (error) {
-                showToast(`Netwerkfout: ${error.message}`, 'error');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        async function toggleCopyTrading() {
-            const toggle = document.getElementById('main-toggle');
-            
-            if (toggle.checked) {
-                await startCopyTrading();
-            } else {
-                await stopCopyTrading();
-            }
-        }
-
-        async function checkAccountStatus() {
-            if (!currentAccount) return;
-            
-            const btn = document.getElementById('check-status');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<div class="loading mr-2"></div>Checken...';
-            btn.disabled = true;
-            
-            try {
-                const response = await fetch(`${API_BASE}/copy/diagnose?accountId=${currentAccount.id}`);
-                const data = await response.json();
-                
-                if (data.ok) {
-                    const status = data.account.connectionStatus;
-                    const hasSubscription = data.subscriberConfig && data.subscriberConfig.subscriptions.length > 0;
-                    
-                    currentAccount.isActive = hasSubscription;
-                    saveAccount(currentAccount);
-                    
-                    showToast(`Account status: ${status === 'CONNECTED' ? 'Verbonden' : status}, Systeem: ${hasSubscription ? 'Actief' : 'Inactief'}`, 'info');
-                    updateLastSync();
-                } else {
-                    showToast(`Status check mislukt: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                showToast(`Netwerkfout: ${error.message}`, 'error');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        function syncNow() {
-            checkAccountStatus();
-            if (currentAccount) {
-                refreshAccountMetrics();
-            }
-            showToast('Account status wordt gesynchroniseerd...', 'info');
-        }
-
-        function showRemoveModal() {
-            document.getElementById('modal-overlay').classList.remove('hidden');
-        }
-
-        function hideRemoveModal() {
-            document.getElementById('modal-overlay').classList.add('hidden');
-        }
-
-        function confirmRemoveAccount() {
-            removeAccount();
-            hideRemoveModal();
-            showToast('Account succesvol verwijderd', 'info');
-        }
-
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('nl-NL', {
-                style: 'currency',
-                currency: 'EUR',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }).format(amount);
-        }
-
-        function showToast(message, type = 'info') {
-            const colors = {
-                success: 'bg-primary text-white',
-                error: 'bg-red-500 text-white',
-                info: 'bg-blue-500 text-white',
-                warning: 'bg-yellow-500 text-white'
-            };
-            
-            const icons = {
-                success: 'fa-check-circle',
-                error: 'fa-exclamation-circle',
-                info: 'fa-info-circle',
-                warning: 'fa-exclamation-triangle'
-            };
-            
-            const toast = document.createElement('div');
-            toast.className = `${colors[type]} px-6 py-4 rounded-xl shadow-lg flex items-center space-x-3 transform translate-x-full transition-transform duration-300 max-w-sm`;
-            toast.innerHTML = `
-                <i class="fas ${icons[type]} text-lg"></i>
-                <span class="font-medium">${message}</span>
-            `;
-            
-            const container = document.getElementById('toast-container');
-            container.appendChild(toast);
-            
-            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
-            
-            setTimeout(() => {
-                toast.classList.add('translate-x-full');
-                setTimeout(() => {
-                    if (container.contains(toast)) {
-                        container.removeChild(toast);
-                    }
-                }, 300);
-            }, 5000);
-        }
-
-        // Auto-refresh every 30 seconds
-        setInterval(() => {
-            if (currentAccount) {
-                checkAccountStatus();
-                refreshAccountMetrics();
-            }
-        }, 30000);
-
-        // Real-time metrics refresh every 10 seconds
-        setInterval(() => {
-            if (currentAccount && !document.getElementById('account-dashboard').classList.contains('hidden')) {
-                refreshAccountMetrics();
-            }
-        }, 10000);
-    </script>
-</body>
-</html>
                 }
             }
         }
@@ -704,7 +147,7 @@
                 <div class="flex items-center space-x-4">
                     <div class="flex items-center space-x-3 bg-green-50 px-4 py-2 rounded-full">
                         <div class="w-3 h-3 bg-primary rounded-full pulse-dot"></div>
-                        <span class="text-sm font-medium text-primary-dark">Live Verbonden</span>
+                        <span class="text-sm font-medium" style="color: #0A2540 !important;">Live Verbonden</span>
                     </div>
                 </div>
             </div>
@@ -714,16 +157,16 @@
     <!-- Main Content -->
     <div class="container mx-auto px-6 py-8">
         <!-- Status Banner -->
-        <div id="status-banner" class="mb-8 p-8 card card-hover gradient-bg-inactive text-white">
+        <div id="status-banner" class="mb-8 p-8 card card-hover" style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
-                    <h2 class="text-3xl font-bold mb-3 text-white">Systeem Status</h2>
-                    <p id="status-text" class="text-lg text-white/90">Verbind uw trading account om het systeem te activeren</p>
+                    <h2 class="text-3xl font-bold mb-3" style="color: #0A2540 !important;">Systeem Status</h2>
+                    <p id="status-text" class="text-lg" style="color: #27AE60 !important;">Verbind uw trading account om het systeem te activeren</p>
                 </div>
                 <div class="flex items-center space-x-6">
                     <div class="text-right mr-4">
-                        <div class="text-sm text-white/75">Systeem Toggle</div>
-                        <div class="text-lg font-semibold text-white">AAN/UIT</div>
+                        <div class="text-sm" style="color: #0A2540 !important;">Systeem Toggle</div>
+                        <div class="text-lg font-semibold" style="color: #27AE60 !important;">AAN/UIT</div>
                     </div>
                     <label class="flex items-center cursor-pointer">
                         <input type="checkbox" id="main-toggle" class="toggle-switch" disabled>
@@ -752,7 +195,7 @@
                         </div>
                     </div>
 
-                    <!-- Account Form (shown when no account) -->
+                    <!-- Account Form -->
                     <div id="account-form" class="space-y-6">
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
@@ -783,24 +226,24 @@
                             <div class="mt-3 p-3 bg-blue-50 rounded-lg">
                                 <p class="text-sm text-blue-700 flex items-start">
                                     <i class="fas fa-info-circle mr-2 mt-0.5 text-blue-500"></i>
-                                    <span>Gebruik uw <strong>master wachtwoord</strong>, niet het investor wachtwoord. Dit geeft het systeem toegang tot automatisch handelen.</span>
+                                    <span>Gebruik uw <strong>master wachtwoord</strong>, niet het investor wachtwoord.</span>
                                 </p>
                             </div>
                         </div>
 
                         <div class="grid md:grid-cols-2 gap-4">
-                            <button id="test-btn" class="btn-secondary text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center">
+                            <button id="test-btn" class="btn-secondary text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center">
                                 <i class="fas fa-vial mr-2"></i>
                                 Test Verbinding
                             </button>
-                            <button id="connect-btn" class="btn-primary text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center">
+                            <button id="connect-btn" class="btn-primary text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center">
                                 <i class="fas fa-plug mr-2"></i>
                                 Verbind Account
                             </button>
                         </div>
                     </div>
 
-                    <!-- Connected Account (shown when account exists) -->
+                    <!-- Connected Account -->
                     <div id="connected-account" class="hidden">
                         <div class="bg-green-50 border-2 border-primary/20 rounded-xl p-6 mb-6">
                             <div class="flex items-center justify-between">
@@ -817,143 +260,28 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button id="remove-account" class="text-red-500 hover:text-red-700 p-3 rounded-lg hover:bg-red-50 transition-all">
+                                <button id="remove-account" class="text-red-500 hover:text-red-700 p-3 rounded-lg hover:bg-red-50">
                                     <i class="fas fa-trash text-xl"></i>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- System Controls -->
                         <div class="grid md:grid-cols-2 gap-4">
-                            <button id="start-copy" class="btn-primary text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center">
+                            <button id="start-copy" class="btn-primary text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center">
                                 <i class="fas fa-play mr-2"></i>
                                 Start Systeem
                             </button>
-                            <button id="stop-copy" class="btn-danger text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center">
+                            <button id="stop-copy" class="btn-danger text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center">
                                 <i class="fas fa-stop mr-2"></i>
                                 Stop Systeem
                             </button>
                         </div>
                     </div>
                 </div>
-
-                <!-- Account Dashboard (shown when account is connected) -->
-                <div id="account-dashboard" class="hidden space-y-6">
-                    <!-- Account Summary -->
-                    <div class="card p-6 card-hover">
-                        <div class="flex items-center justify-between mb-6">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-wallet text-primary"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-gray-800">Account Overzicht</h3>
-                            </div>
-                            <button id="refresh-metrics" class="text-primary hover:text-primary-dark p-2 rounded-lg hover:bg-primary/5">
-                                <i class="fas fa-sync text-lg"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="grid md:grid-cols-4 gap-6">
-                            <div class="bg-gradient-to-br from-primary to-primary-dark rounded-xl p-4 text-white">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm opacity-90">Saldo</span>
-                                    <i class="fas fa-euro-sign"></i>
-                                </div>
-                                <div id="account-balance" class="text-2xl font-bold">--</div>
-                                <div id="balance-change" class="text-sm opacity-75">--</div>
-                            </div>
-                            
-                            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm opacity-90">Equity</span>
-                                    <i class="fas fa-chart-pie"></i>
-                                </div>
-                                <div id="account-equity" class="text-2xl font-bold">--</div>
-                                <div id="equity-change" class="text-sm opacity-75">--</div>
-                            </div>
-                            
-                            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm opacity-90">Open Posities</span>
-                                    <i class="fas fa-list"></i>
-                                </div>
-                                <div id="open-positions" class="text-2xl font-bold">--</div>
-                                <div class="text-sm opacity-75">Actief</div>
-                            </div>
-                            
-                            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm opacity-90">Winst/Verlies</span>
-                                    <i class="fas fa-trending-up"></i>
-                                </div>
-                                <div id="profit-loss" class="text-2xl font-bold">--</div>
-                                <div class="text-sm opacity-75">Vandaag</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Balance Chart -->
-                    <div class="card p-6 card-hover">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-bold text-gray-800">Saldo Verloop</h3>
-                            <div class="flex space-x-2">
-                                <button class="chart-period px-3 py-1 text-sm rounded-lg bg-primary text-white" data-period="7">7D</button>
-                                <button class="chart-period px-3 py-1 text-sm rounded-lg text-gray-600 hover:bg-gray-100" data-period="30">30D</button>
-                                <button class="chart-period px-3 py-1 text-sm rounded-lg text-gray-600 hover:bg-gray-100" data-period="90">90D</button>
-                            </div>
-                        </div>
-                        <div class="h-64">
-                            <canvas id="balanceChart" width="400" height="200"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Open Positions -->
-                    <div class="card p-6 card-hover">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-bold text-gray-800">Open Posities</h3>
-                            <span id="positions-count" class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">0 posities</span>
-                        </div>
-                        <div id="positions-list" class="space-y-3">
-                            <div class="text-center py-8 text-gray-500">
-                                <i class="fas fa-chart-line text-4xl mb-4 opacity-50"></i>
-                                <p>Geen open posities</p>
-                                <p class="text-sm mt-2">Posities verschijnen hier als het systeem actief is</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Features Cards (shown when no account) -->
-                <div id="features-cards" class="grid md:grid-cols-3 gap-6">
-                    <div class="card p-6 text-center card-hover">
-                        <div class="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-robot text-primary text-2xl"></i>
-                        </div>
-                        <h4 class="font-bold text-gray-800 mb-2">Volledig Automatisch</h4>
-                        <p class="text-sm text-gray-medium">Het systeem handelt automatisch zonder handmatige tussenkomst</p>
-                    </div>
-                    
-                    <div class="card p-6 text-center card-hover">
-                        <div class="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-shield-alt text-primary text-2xl"></i>
-                        </div>
-                        <h4 class="font-bold text-gray-800 mb-2">Veilig & Betrouwbaar</h4>
-                        <p class="text-sm text-gray-medium">Uw geld blijft veilig op uw eigen trading account</p>
-                    </div>
-                    
-                    <div class="card p-6 text-center card-hover">
-                        <div class="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-chart-line text-primary text-2xl"></i>
-                        </div>
-                        <h4 class="font-bold text-gray-800 mb-2">Professionele Strategie</h4>
-                        <p class="text-sm text-gray-medium">Volg bewezen EUR trading strategieën van experts</p>
-                    </div>
-                </div>
             </div>
 
             <!-- Sidebar -->
             <div class="space-y-6">
-                <!-- System Status -->
                 <div class="card p-6 card-hover">
                     <div class="flex items-center space-x-3 mb-6">
                         <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -977,7 +305,6 @@
                     </div>
                 </div>
 
-                <!-- Quick Actions -->
                 <div class="card p-6 card-hover">
                     <div class="flex items-center space-x-3 mb-6">
                         <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -986,48 +313,24 @@
                         <h3 class="text-xl font-bold text-gray-800">Snelle Acties</h3>
                     </div>
                     <div class="space-y-3">
-                        <button id="sync-now" class="w-full btn-primary text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center">
+                        <button id="sync-now" class="w-full btn-primary text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center">
                             <i class="fas fa-sync mr-2"></i>
                             Synchroniseer Nu
                         </button>
-                        <button id="check-status" class="w-full btn-secondary text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center">
+                        <button id="check-status" class="w-full btn-secondary text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center">
                             <i class="fas fa-search mr-2"></i>
                             Check Status
                         </button>
-                    </div>
-                </div>
-
-                <!-- Help & Support -->
-                <div class="card p-6 card-hover">
-                    <div class="flex items-center space-x-3 mb-6">
-                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-question-circle text-primary"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800">Hulp & Support</h3>
-                    </div>
-                    <div class="space-y-3">
-                        <a href="#" class="block text-primary hover:text-primary-dark text-sm font-medium flex items-center py-2 px-3 rounded-lg hover:bg-primary/5 transition-all">
-                            <i class="fas fa-video mr-3"></i>
-                            Video Tutorial
-                        </a>
-                        <a href="#" class="block text-primary hover:text-primary-dark text-sm font-medium flex items-center py-2 px-3 rounded-lg hover:bg-primary/5 transition-all">
-                            <i class="fas fa-book mr-3"></i>
-                            Handleiding
-                        </a>
-                        <a href="#" class="block text-primary hover:text-primary-dark text-sm font-medium flex items-center py-2 px-3 rounded-lg hover:bg-primary/5 transition-all">
-                            <i class="fas fa-comments mr-3"></i>
-                            Live Chat
-                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notifications -->
+    <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-4"></div>
 
-    <!-- Confirmation Modal -->
+    <!-- Modal -->
     <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 card">
             <div class="text-center">
@@ -1035,12 +338,12 @@
                     <i class="fas fa-exclamation-triangle text-red-600 text-3xl"></i>
                 </div>
                 <h3 class="text-2xl font-bold text-gray-900 mb-4">Account Verwijderen</h3>
-                <p class="text-gray-600 mb-8">Weet je zeker dat je dit trading account wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt en het systeem wordt gestopt.</p>
+                <p class="text-gray-600 mb-8">Weet je zeker dat je dit account wilt verwijderen?</p>
                 <div class="grid grid-cols-2 gap-4">
-                    <button id="modal-cancel" class="btn-secondary text-white font-bold py-3 px-6 rounded-xl transition-all">
+                    <button id="modal-cancel" class="btn-secondary text-white font-bold py-3 px-6 rounded-xl">
                         Annuleer
                     </button>
-                    <button id="modal-confirm" class="btn-danger text-white font-bold py-3 px-6 rounded-xl transition-all">
+                    <button id="modal-confirm" class="btn-danger text-white font-bold py-3 px-6 rounded-xl">
                         Verwijder
                     </button>
                 </div>
@@ -1048,19 +351,11 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Global state
         let currentAccount = null;
-        let copyingActive = false;
-        let balanceChart = null;
-        let accountMetrics = null;
-        
-        // API endpoints
         const API_BASE = 'https://copy-murex.vercel.app/api';
         const STRATEGY_ID = '67ko';
 
-        // Load saved account on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadSavedAccount();
             setupEventListeners();
@@ -1076,28 +371,355 @@
             document.getElementById('check-status').addEventListener('click', checkAccountStatus);
             document.getElementById('sync-now').addEventListener('click', syncNow);
             document.getElementById('main-toggle').addEventListener('change', toggleCopyTrading);
-            
-            // Add refresh metrics button if it exists
-            const refreshBtn = document.getElementById('refresh-metrics');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', refreshAccountMetrics);
-            }
-            
-            // Chart period buttons
-            document.querySelectorAll('.chart-period').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.chart-period').forEach(b => {
-                        b.className = 'chart-period px-3 py-1 text-sm rounded-lg text-gray-600 hover:bg-gray-100';
-                    });
-                    this.className = 'chart-period px-3 py-1 text-sm rounded-lg bg-primary text-white';
-                    updateBalanceChart(this.dataset.period);
-                });
-            });
-            
-            // Modal events
             document.getElementById('modal-cancel').addEventListener('click', hideRemoveModal);
             document.getElementById('modal-confirm').addEventListener('click', confirmRemoveAccount);
             document.getElementById('modal-overlay').addEventListener('click', function(e) {
                 if (e.target === this) hideRemoveModal();
             });
         }
+
+        function loadSavedAccount() {
+            const saved = localStorage.getItem('tradingAccount');
+            if (saved) {
+                currentAccount = JSON.parse(saved);
+                updateUI();
+                checkAccountStatus();
+            }
+        }
+
+        function saveAccount(account) {
+            currentAccount = account;
+            localStorage.setItem('tradingAccount', JSON.stringify(account));
+            updateUI();
+        }
+
+        function removeAccount() {
+            currentAccount = null;
+            localStorage.removeItem('tradingAccount');
+            updateUI();
+        }
+
+        function updateUI() {
+            const hasAccount = !!currentAccount;
+            
+            document.getElementById('account-form').classList.toggle('hidden', hasAccount);
+            document.getElementById('connected-account').classList.toggle('hidden', !hasAccount);
+            
+            const mainToggle = document.getElementById('main-toggle');
+            mainToggle.disabled = !hasAccount;
+            
+            if (hasAccount) {
+                document.getElementById('connected-broker').textContent = currentAccount.broker || 'Onbekend';
+                document.getElementById('connected-login').textContent = currentAccount.login || 'Onbekend';
+                document.getElementById('connected-status').textContent = currentAccount.isActive ? 'Systeem Actief' : 'Systeem Inactief';
+                
+                const copyStatus = document.getElementById('copy-status');
+                if (currentAccount.isActive) {
+                    copyStatus.textContent = 'Actief';
+                    copyStatus.className = 'font-bold text-primary bg-primary/10 px-3 py-1 rounded-full text-sm';
+                } else {
+                    copyStatus.textContent = 'Inactief';
+                    copyStatus.className = 'font-bold text-gray-500 px-3 py-1 rounded-full bg-gray-100 text-sm';
+                }
+                
+                const statusText = document.getElementById('status-text');
+                if (currentAccount.isActive) {
+                    statusText.textContent = 'Het systeem is ACTIEF op uw rekening - Trades worden automatisch uitgevoerd';
+                } else {
+                    statusText.textContent = 'Het systeem is NIET actief op uw rekening - Klik hier naast op de knop om het systeem te activeren op uw rekening';
+                }
+                
+                mainToggle.checked = currentAccount.isActive;
+            } else {
+                document.getElementById('status-text').textContent = 'Verbind uw trading account om het systeem te activeren';
+                document.getElementById('copy-status').textContent = 'Geen account';
+                mainToggle.checked = false;
+            }
+            
+            updateLastSync();
+        }
+
+        function updateLastSync() {
+            const now = new Date();
+            document.getElementById('last-sync').textContent = now.toLocaleTimeString('nl-NL');
+        }
+
+        async function testConnection() {
+            const broker = document.getElementById('broker-select').value;
+            const login = document.getElementById('login-input').value;
+            const password = document.getElementById('password-input').value;
+            
+            if (!broker || !login || !password) {
+                showToast('Vul alle velden in', 'warning');
+                return;
+            }
+            
+            const btn = document.getElementById('test-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loading mr-2"></div>Testen...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE}/link-account`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        brokerServer: broker,
+                        login: login,
+                        password: password,
+                        baseCurrency: 'EUR',
+                        copyFactoryRoles: ['SUBSCRIBER'],
+                        dryRun: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    showToast('Verbinding geslaagd!', 'success');
+                } else {
+                    showToast(`Test mislukt: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showToast(`Netwerkfout: ${error.message}`, 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function connectAccount() {
+            const broker = document.getElementById('broker-select').value;
+            const login = document.getElementById('login-input').value;
+            const password = document.getElementById('password-input').value;
+            
+            if (!broker || !login || !password) {
+                showToast('Vul alle velden in', 'warning');
+                return;
+            }
+            
+            const btn = document.getElementById('connect-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loading mr-2"></div>Verbinden...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE}/link-account`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        brokerServer: broker,
+                        login: login,
+                        password: password,
+                        baseCurrency: 'EUR',
+                        copyFactoryRoles: ['SUBSCRIBER'],
+                        dryRun: false
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    const account = {
+                        id: data.accountId,
+                        broker: broker,
+                        login: login,
+                        isActive: false,
+                        dateAdded: new Date().toISOString()
+                    };
+                    
+                    saveAccount(account);
+                    showToast('Account succesvol verbonden!', 'success');
+                    
+                    document.getElementById('broker-select').value = '';
+                    document.getElementById('login-input').value = '';
+                    document.getElementById('password-input').value = '';
+                } else {
+                    showToast(`Verbinden mislukt: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showToast(`Netwerkfout: ${error.message}`, 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function startCopyTrading() {
+            if (!currentAccount) return;
+            
+            const btn = document.getElementById('start-copy');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loading mr-2"></div>Starten...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE}/copy/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        accountId: currentAccount.id,
+                        strategy: STRATEGY_ID,
+                        multiplier: 1.0,
+                        mirrorOpenTrades: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    currentAccount.isActive = true;
+                    saveAccount(currentAccount);
+                    showToast('Het systeem is gestart!', 'success');
+                } else {
+                    showToast(`Starten mislukt: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showToast(`Netwerkfout: ${error.message}`, 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function stopCopyTrading() {
+            if (!currentAccount) return;
+            
+            const btn = document.getElementById('stop-copy');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loading mr-2"></div>Stoppen...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE}/copy/stop`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        accountId: currentAccount.id
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    currentAccount.isActive = false;
+                    saveAccount(currentAccount);
+                    showToast('Het systeem is gestopt!', 'success');
+                } else {
+                    showToast(`Stoppen mislukt: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showToast(`Netwerkfout: ${error.message}`, 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function toggleCopyTrading() {
+            const toggle = document.getElementById('main-toggle');
+            
+            if (toggle.checked) {
+                await startCopyTrading();
+            } else {
+                await stopCopyTrading();
+            }
+        }
+
+        async function checkAccountStatus() {
+            if (!currentAccount) return;
+            
+            const btn = document.getElementById('check-status');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loading mr-2"></div>Checken...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE}/copy/diagnose?accountId=${currentAccount.id}`);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    const status = data.account.connectionStatus;
+                    const hasSubscription = data.subscriberConfig && data.subscriberConfig.subscriptions.length > 0;
+                    
+                    currentAccount.isActive = hasSubscription;
+                    saveAccount(currentAccount);
+                    
+                    showToast(`Status: ${status === 'CONNECTED' ? 'Verbonden' : status}`, 'info');
+                    updateLastSync();
+                } else {
+                    showToast(`Status check mislukt: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showToast(`Netwerkfout: ${error.message}`, 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function syncNow() {
+            checkAccountStatus();
+            showToast('Status wordt gesynchroniseerd...', 'info');
+        }
+
+        function showRemoveModal() {
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        }
+
+        function hideRemoveModal() {
+            document.getElementById('modal-overlay').classList.add('hidden');
+        }
+
+        function confirmRemoveAccount() {
+            removeAccount();
+            hideRemoveModal();
+            showToast('Account verwijderd', 'info');
+        }
+
+        function showToast(message, type = 'info') {
+            const colors = {
+                success: 'bg-primary text-white',
+                error: 'bg-red-500 text-white',
+                info: 'bg-blue-500 text-white',
+                warning: 'bg-yellow-500 text-white'
+            };
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                info: 'fa-info-circle',
+                warning: 'fa-exclamation-triangle'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `${colors[type]} px-6 py-4 rounded-xl shadow-lg flex items-center space-x-3 transform translate-x-full transition-transform duration-300 max-w-sm`;
+            toast.innerHTML = `
+                <i class="fas ${icons[type]} text-lg"></i>
+                <span class="font-medium">${message}</span>
+            `;
+            
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+            
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (currentAccount) {
+                checkAccountStatus();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
