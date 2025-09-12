@@ -278,6 +278,65 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Trading Dashboard -->
+                <div id="trading-dashboard" class="hidden space-y-6">
+                    <div class="card p-6 card-hover">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-chart-bar text-primary mr-3"></i>
+                                Account Overzicht
+                            </h3>
+                            <button id="refresh-account" class="text-primary hover:text-primary-dark p-2 rounded-lg hover:bg-primary/10">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-gradient-to-br from-primary to-primary-dark rounded-xl p-6 text-white">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm opacity-90">Saldo</span>
+                                    <i class="fas fa-wallet text-lg"></i>
+                                </div>
+                                <div id="account-balance" class="text-2xl font-bold mb-1">€ --</div>
+                                <div class="text-sm opacity-75">Beschikbaar</div>
+                            </div>
+                            
+                            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm opacity-90">Equity</span>
+                                    <i class="fas fa-chart-pie text-lg"></i>
+                                </div>
+                                <div id="account-equity" class="text-2xl font-bold mb-1">€ --</div>
+                                <div class="text-sm opacity-75">Totale waarde</div>
+                            </div>
+                            
+                            <div id="pnl-card" class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm opacity-90">P&L</span>
+                                    <i class="fas fa-trending-up text-lg"></i>
+                                </div>
+                                <div id="daily-pnl" class="text-2xl font-bold mb-1">€ --</div>
+                                <div class="text-sm opacity-75">Winst/Verlies</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-6 card-hover">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-bold text-gray-800">Open Posities</h3>
+                            <span id="positions-count" class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">0 posities</span>
+                        </div>
+                        
+                        <div id="positions-list">
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-chart-line text-4xl mb-4 opacity-30"></i>
+                                <p class="font-medium">Geen open posities</p>
+                                <p class="text-sm mt-1">Posities verschijnen hier wanneer het systeem actief is</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Sidebar -->
@@ -376,6 +435,11 @@
             document.getElementById('modal-overlay').addEventListener('click', function(e) {
                 if (e.target === this) hideRemoveModal();
             });
+            
+            const refreshBtn = document.getElementById('refresh-account');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', refreshAccountData);
+            }
         }
 
         function loadSavedAccount() {
@@ -404,6 +468,7 @@
             
             document.getElementById('account-form').classList.toggle('hidden', hasAccount);
             document.getElementById('connected-account').classList.toggle('hidden', !hasAccount);
+            document.getElementById('trading-dashboard').classList.toggle('hidden', !hasAccount);
             
             const mainToggle = document.getElementById('main-toggle');
             mainToggle.disabled = !hasAccount;
@@ -430,6 +495,7 @@
                 }
                 
                 mainToggle.checked = currentAccount.isActive;
+                refreshAccountData();
             } else {
                 document.getElementById('status-text').textContent = 'Verbind uw trading account om het systeem te activeren';
                 document.getElementById('copy-status').textContent = 'Geen account';
@@ -476,12 +542,12 @@
                 const data = await response.json();
                 
                 if (data.ok) {
-                    showToast('Verbinding geslaagd!', 'success');
+                    showToast('Verbinding geslaagd! Account gegevens zijn correct.', 'success');
                 } else {
-                    showToast(`Test mislukt: ${data.error}`, 'error');
+                    showToast(`Test mislukt: ${data.error || 'Controleer uw inloggegevens'}`, 'error');
                 }
             } catch (error) {
-                showToast(`Netwerkfout: ${error.message}`, 'error');
+                showToast(`Verbindingsfout: ${error.message}`, 'error');
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -494,7 +560,7 @@
             const password = document.getElementById('password-input').value;
             
             if (!broker || !login || !password) {
-                showToast('Vul alle velden in', 'warning');
+                showToast('Vul alle velden in om door te gaan', 'warning');
                 return;
             }
             
@@ -529,13 +595,13 @@
                     };
                     
                     saveAccount(account);
-                    showToast('Account succesvol verbonden!', 'success');
+                    showToast('Account succesvol verbonden! U kunt nu het systeem activeren.', 'success');
                     
                     document.getElementById('broker-select').value = '';
                     document.getElementById('login-input').value = '';
                     document.getElementById('password-input').value = '';
                 } else {
-                    showToast(`Verbinden mislukt: ${data.error}`, 'error');
+                    showToast(`Verbinden mislukt: ${data.error || 'Er ging iets mis, probeer opnieuw'}`, 'error');
                 }
             } catch (error) {
                 showToast(`Netwerkfout: ${error.message}`, 'error');
@@ -550,7 +616,7 @@
             
             const btn = document.getElementById('start-copy');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<div class="loading mr-2"></div>Starten...';
+            btn.innerHTML = '<div class="loading mr-2"></div>Systeem Starten...';
             btn.disabled = true;
             
             try {
@@ -570,9 +636,9 @@
                 if (data.ok) {
                     currentAccount.isActive = true;
                     saveAccount(currentAccount);
-                    showToast('Het systeem is gestart!', 'success');
+                    showToast('Het systeem is succesvol gestart! Trades worden nu automatisch uitgevoerd.', 'success');
                 } else {
-                    showToast(`Starten mislukt: ${data.error}`, 'error');
+                    showToast(`Systeem starten mislukt: ${data.error || 'Er ging iets mis'}`, 'error');
                 }
             } catch (error) {
                 showToast(`Netwerkfout: ${error.message}`, 'error');
@@ -587,7 +653,7 @@
             
             const btn = document.getElementById('stop-copy');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<div class="loading mr-2"></div>Stoppen...';
+            btn.innerHTML = '<div class="loading mr-2"></div>Systeem Stoppen...';
             btn.disabled = true;
             
             try {
@@ -604,9 +670,9 @@
                 if (data.ok) {
                     currentAccount.isActive = false;
                     saveAccount(currentAccount);
-                    showToast('Het systeem is gestopt!', 'success');
+                    showToast('Het systeem is succesvol gestopt.', 'success');
                 } else {
-                    showToast(`Stoppen mislukt: ${data.error}`, 'error');
+                    showToast(`Systeem stoppen mislukt: ${data.error || 'Er ging iets mis'}`, 'error');
                 }
             } catch (error) {
                 showToast(`Netwerkfout: ${error.message}`, 'error');
@@ -645,7 +711,7 @@
                     currentAccount.isActive = hasSubscription;
                     saveAccount(currentAccount);
                     
-                    showToast(`Status: ${status === 'CONNECTED' ? 'Verbonden' : status}`, 'info');
+                    showToast(`Account status: ${status === 'CONNECTED' ? 'Verbonden' : status}, Systeem: ${hasSubscription ? 'Actief' : 'Inactief'}`, 'info');
                     updateLastSync();
                 } else {
                     showToast(`Status check mislukt: ${data.error}`, 'error');
@@ -660,7 +726,92 @@
 
         function syncNow() {
             checkAccountStatus();
-            showToast('Status wordt gesynchroniseerd...', 'info');
+            if (currentAccount) {
+                refreshAccountData();
+            }
+            showToast('Account status wordt gesynchroniseerd...', 'info');
+        }
+
+        async function refreshAccountData() {
+            if (!currentAccount) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/account-metrics?id=${currentAccount.id}`);
+                const data = await response.json();
+                
+                if (data.ok && data.info) {
+                    updateAccountDisplay(data.info, data.counts);
+                } else {
+                    console.warn('Account metrics niet beschikbaar:', data.error);
+                    updateAccountDisplay(null, null);
+                }
+            } catch (error) {
+                console.error('Fout bij ophalen account data:', error);
+                updateAccountDisplay(null, null);
+            }
+        }
+
+        function updateAccountDisplay(info, counts) {
+            if (info) {
+                const balance = info.balance || 0;
+                const equity = info.equity || 0;
+                const pnl = equity - balance;
+                
+                document.getElementById('account-balance').textContent = formatEuro(balance);
+                document.getElementById('account-equity').textContent = formatEuro(equity);
+                
+                const pnlElement = document.getElementById('daily-pnl');
+                pnlElement.textContent = formatEuro(pnl);
+                
+                const pnlCard = document.getElementById('pnl-card');
+                if (pnl >= 0) {
+                    pnlCard.className = 'bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white';
+                } else {
+                    pnlCard.className = 'bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white';
+                }
+                
+                const positionCount = counts?.positions || 0;
+                document.getElementById('positions-count').textContent = `${positionCount} posities`;
+                
+                updatePositionsList(positionCount);
+                
+            } else {
+                document.getElementById('account-balance').textContent = 'Laden...';
+                document.getElementById('account-equity').textContent = 'Laden...';
+                document.getElementById('daily-pnl').textContent = 'Laden...';
+                document.getElementById('positions-count').textContent = '-- posities';
+            }
+        }
+
+        function updatePositionsList(count) {
+            const positionsList = document.getElementById('positions-list');
+            
+            if (count === 0) {
+                positionsList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-chart-line text-4xl mb-4 opacity-30"></i>
+                        <p class="font-medium">Geen open posities</p>
+                        <p class="text-sm mt-1">Posities verschijnen hier wanneer het systeem actief is</p>
+                    </div>
+                `;
+            } else {
+                positionsList.innerHTML = `
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                        <i class="fas fa-chart-bar text-blue-500 text-2xl mb-2"></i>
+                        <p class="text-blue-700 font-medium">${count} actieve posities gevonden</p>
+                        <p class="text-blue-600 text-sm mt-1">Details worden geladen via het trading systeem</p>
+                    </div>
+                `;
+            }
+        }
+
+        function formatEuro(amount) {
+            return new Intl.NumberFormat('nl-NL', {
+                style: 'currency',
+                currency: 'EUR',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
         }
 
         function showRemoveModal() {
@@ -718,6 +869,7 @@
         setInterval(() => {
             if (currentAccount) {
                 checkAccountStatus();
+                refreshAccountData();
             }
         }, 30000);
     </script>
