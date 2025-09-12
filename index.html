@@ -287,7 +287,7 @@
                                 <i class="fas fa-chart-bar text-primary mr-3"></i>
                                 Account Overzicht
                             </h3>
-                            <button id="refresh-account" class="text-primary hover:text-primary-dark p-2 rounded-lg hover:bg-primary/10 transition-all">
+                            <button id="refresh-account" class="text-primary hover:text-primary-dark p-2 rounded-lg hover:bg-primary/10">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
                         </div>
@@ -503,25 +503,6 @@
             }
             
             updateLastSync();
-        }
-
-        async function enableMetaStats(accountId) {
-            try {
-                // Enable MetaStats for the account to get trading metrics
-                const response = await fetch(`${API_BASE}/account-metrics?id=${accountId}&enable=true`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                if (response.ok) {
-                    showToast('MetaStats geactiveerd voor trading metrics', 'success');
-                } else {
-                    console.warn('MetaStats activatie gefaald');
-                    showToast('MetaStats activatie gefaald - metrics mogelijk beperkt', 'warning');
-                }
-            } catch (error) {
-                console.error('Fout bij MetaStats activatie:', error);
-            }
         }
 
         function updateLastSync() {
@@ -760,33 +741,19 @@
         async function refreshAccountData() {
             if (!currentAccount) return;
             
-            console.log('Refreshing account data for:', currentAccount.id);
-            
             try {
                 const response = await fetch(`${API_BASE}/account-metrics?id=${currentAccount.id}`);
                 const data = await response.json();
-                
-                console.log('Account metrics response:', data);
                 
                 if (data.ok && data.info) {
                     updateAccountDisplay(data.info, data.counts);
                 } else {
                     console.warn('Account metrics niet beschikbaar:', data.error);
-                    // Show mock data if real data fails
-                    updateAccountDisplay({
-                        balance: 10000,
-                        equity: 10150
-                    }, { positions: 2 });
-                    showToast('Demo data geladen - echte data binnenkort beschikbaar', 'info');
+                    updateAccountDisplay(null, null);
                 }
             } catch (error) {
                 console.error('Fout bij ophalen account data:', error);
-                // Show mock data on error
-                updateAccountDisplay({
-                    balance: 10000,
-                    equity: 10150
-                }, { positions: 2 });
-                showToast('Demo data geladen - API niet bereikbaar', 'warning');
+                updateAccountDisplay(null, null);
             }
         }
 
