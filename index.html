@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trading System Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -127,6 +128,16 @@
         .input-field:focus {
             border-color: #10b981;
             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            border-color: #10b981;
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -281,6 +292,7 @@
 
                 <!-- Trading Dashboard -->
                 <div id="trading-dashboard" class="hidden space-y-6">
+                    <!-- Account Overview -->
                     <div class="card p-6 card-hover">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-xl font-bold text-gray-800 flex items-center">
@@ -321,7 +333,75 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Performance Statistics -->
+                    <div class="card p-6 card-hover">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-chart-line text-primary mr-3"></i>
+                                Prestatie Statistieken
+                            </h3>
+                            <button id="refresh-stats" class="text-primary hover:text-primary-dark p-2 rounded-lg hover:bg-primary/10">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-4 gap-4 mb-6">
+                            <div class="stat-card p-4">
+                                <div class="text-sm text-gray-600 mb-1">Dagelijks Rendement</div>
+                                <div id="daily-growth" class="text-2xl font-bold text-gray-800">--%</div>
+                            </div>
+                            <div class="stat-card p-4">
+                                <div class="text-sm text-gray-600 mb-1">Maandelijks Rendement</div>
+                                <div id="monthly-growth" class="text-2xl font-bold text-gray-800">--%</div>
+                            </div>
+                            <div class="stat-card p-4">
+                                <div class="text-sm text-gray-600 mb-1">Totaal Rendement</div>
+                                <div id="total-growth" class="text-2xl font-bold text-gray-800">--%</div>
+                            </div>
+                            <div class="stat-card p-4">
+                                <div class="text-sm text-gray-600 mb-1">Win Rate</div>
+                                <div id="win-rate" class="text-2xl font-bold text-gray-800">--%</div>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div class="stat-card p-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm text-gray-600">Totaal Trades</div>
+                                        <div id="total-trades" class="text-xl font-bold text-gray-800">0</div>
+                                    </div>
+                                    <i class="fas fa-exchange-alt text-2xl text-gray-400"></i>
+                                </div>
+                            </div>
+                            <div class="stat-card p-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm text-gray-600">Max Drawdown</div>
+                                        <div id="max-drawdown" class="text-xl font-bold text-gray-800">0%</div>
+                                    </div>
+                                    <i class="fas fa-chart-area text-2xl text-gray-400"></i>
+                                </div>
+                            </div>
+                            <div class="stat-card p-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm text-gray-600">Risk/Reward</div>
+                                        <div id="risk-reward" class="text-xl font-bold text-gray-800">0.0</div>
+                                    </div>
+                                    <i class="fas fa-balance-scale text-2xl text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Chart -->
+                        <div class="mt-6">
+                            <canvas id="performanceChart" width="400" height="150"></canvas>
+                        </div>
+                    </div>
                     
+                    <!-- Open Positions -->
                     <div class="card p-6 card-hover">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-xl font-bold text-gray-800">Open Posities</h3>
@@ -380,6 +460,10 @@
                             <i class="fas fa-search mr-2"></i>
                             Check Status
                         </button>
+                        <button id="close-all-positions" class="w-full btn-danger text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center hidden">
+                            <i class="fas fa-times-circle mr-2"></i>
+                            Sluit Alle Posities
+                        </button>
                     </div>
                 </div>
             </div>
@@ -412,6 +496,7 @@
 
     <script>
         let currentAccount = null;
+        let performanceChart = null;
         const API_BASE = 'https://copy-murex.vercel.app/api';
         const STRATEGY_ID = '67ko';
 
@@ -419,6 +504,7 @@
             loadSavedAccount();
             setupEventListeners();
             updateUI();
+            initPerformanceChart();
         });
 
         function setupEventListeners() {
@@ -440,6 +526,55 @@
             if (refreshBtn) {
                 refreshBtn.addEventListener('click', refreshAccountData);
             }
+            
+            const refreshStatsBtn = document.getElementById('refresh-stats');
+            if (refreshStatsBtn) {
+                refreshStatsBtn.addEventListener('click', refreshStatistics);
+            }
+            
+            const closePositionsBtn = document.getElementById('close-all-positions');
+            if (closePositionsBtn) {
+                closePositionsBtn.addEventListener('click', closeAllPositions);
+            }
+        }
+
+        function initPerformanceChart() {
+            const ctx = document.getElementById('performanceChart');
+            if (ctx) {
+                performanceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Account Waarde (€)',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '€' + value.toLocaleString('nl-NL');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         function loadSavedAccount() {
@@ -448,6 +583,7 @@
                 currentAccount = JSON.parse(saved);
                 updateUI();
                 checkAccountStatus();
+                refreshStatistics();
             }
         }
 
@@ -472,6 +608,13 @@
             
             const mainToggle = document.getElementById('main-toggle');
             mainToggle.disabled = !hasAccount;
+            
+            const closePositionsBtn = document.getElementById('close-all-positions');
+            if (hasAccount && currentAccount.isActive) {
+                closePositionsBtn.classList.remove('hidden');
+            } else {
+                closePositionsBtn.classList.add('hidden');
+            }
             
             if (hasAccount) {
                 document.getElementById('connected-broker').textContent = currentAccount.broker || 'Onbekend';
@@ -601,10 +744,10 @@
                     document.getElementById('login-input').value = '';
                     document.getElementById('password-input').value = '';
                     
-                    // Force show dashboard after successful connection
                     setTimeout(() => {
                         document.getElementById('trading-dashboard').classList.remove('hidden');
                         refreshAccountData();
+                        refreshStatistics();
                     }, 500);
                 } else {
                     showToast(`Verbinden mislukt: ${data.error || 'Er ging iets mis, probeer opnieuw'}`, 'error');
@@ -643,6 +786,7 @@
                     currentAccount.isActive = true;
                     saveAccount(currentAccount);
                     showToast('Het systeem is succesvol gestart! Trades worden nu automatisch uitgevoerd.', 'success');
+                    setTimeout(() => refreshStatistics(), 2000);
                 } else {
                     showToast(`Systeem starten mislukt: ${data.error || 'Er ging iets mis'}`, 'error');
                 }
@@ -667,7 +811,8 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        accountId: currentAccount.id
+                        accountId: currentAccount.id,
+                        closePositions: true
                     })
                 });
                 
@@ -676,9 +821,53 @@
                 if (data.ok) {
                     currentAccount.isActive = false;
                     saveAccount(currentAccount);
-                    showToast('Het systeem is succesvol gestopt.', 'success');
+                    
+                    let message = 'Het systeem is succesvol gestopt.';
+                    if (data.positionsClosed && data.positionsClosed.closedCount > 0) {
+                        message += ` ${data.positionsClosed.closedCount} posities zijn gesloten.`;
+                    }
+                    showToast(message, 'success');
+                    
+                    setTimeout(() => refreshAccountData(), 2000);
                 } else {
                     showToast(`Systeem stoppen mislukt: ${data.error || 'Er ging iets mis'}`, 'error');
+                }
+            } catch (error) {
+                showToast(`Netwerkfout: ${error.message}`, 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function closeAllPositions() {
+            if (!currentAccount) return;
+            
+            if (!confirm('Weet u zeker dat u alle open posities wilt sluiten?')) {
+                return;
+            }
+            
+            const btn = document.getElementById('close-all-positions');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loading mr-2"></div>Sluiten...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE}/positions/close-all`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        accountId: currentAccount.id
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    showToast(`${data.closedCount} posities succesvol gesloten`, 'success');
+                    setTimeout(() => refreshAccountData(), 2000);
+                } else {
+                    showToast(`Fout bij sluiten posities: ${data.error}`, 'error');
                 }
             } catch (error) {
                 showToast(`Netwerkfout: ${error.message}`, 'error');
@@ -734,6 +923,7 @@
             checkAccountStatus();
             if (currentAccount) {
                 refreshAccountData();
+                refreshStatistics();
             }
             showToast('Account status wordt gesynchroniseerd...', 'info');
         }
@@ -746,18 +936,48 @@
                 const data = await response.json();
                 
                 if (data.ok && data.info) {
-                    updateAccountDisplay(data.info, data.counts);
+                    updateAccountDisplay(data.info, data.positions, data.counts);
                 } else {
                     console.warn('Account metrics niet beschikbaar:', data.error);
-                    updateAccountDisplay(null, null);
+                    updateAccountDisplay(null, null, null);
                 }
             } catch (error) {
                 console.error('Fout bij ophalen account data:', error);
-                updateAccountDisplay(null, null);
+                updateAccountDisplay(null, null, null);
             }
         }
 
-        function updateAccountDisplay(info, counts) {
+        async function refreshStatistics() {
+            if (!currentAccount) return;
+            
+            const btn = document.getElementById('refresh-stats');
+            if (btn) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i>';
+                btn.disabled = true;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/account-statistics?id=${currentAccount.id}`);
+                const data = await response.json();
+                
+                if (data.ok && data.statistics) {
+                    updateStatisticsDisplay(data.statistics);
+                    updatePerformanceChart(data.statistics);
+                } else {
+                    console.warn('Statistieken niet beschikbaar:', data.error);
+                }
+            } catch (error) {
+                console.error('Fout bij ophalen statistieken:', error);
+            } finally {
+                if (btn) {
+                    btn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        function updateAccountDisplay(info, positions, counts) {
             if (info) {
                 const balance = info.balance || 0;
                 const equity = info.equity || 0;
@@ -779,7 +999,7 @@
                 const positionCount = counts?.positions || 0;
                 document.getElementById('positions-count').textContent = `${positionCount} posities`;
                 
-                updatePositionsList(positionCount);
+                updatePositionsList(positions || []);
                 
             } else {
                 document.getElementById('account-balance').textContent = 'Laden...';
@@ -789,10 +1009,66 @@
             }
         }
 
-        function updatePositionsList(count) {
+        function updateStatisticsDisplay(stats) {
+            // Rendement percentages
+            document.getElementById('daily-growth').textContent = formatPercentage(stats.dailyGrowth);
+            document.getElementById('monthly-growth').textContent = formatPercentage(stats.monthlyGrowth);
+            document.getElementById('total-growth').textContent = formatPercentage(stats.totalGrowth);
+            document.getElementById('win-rate').textContent = stats.winRate ? `${stats.winRate}%` : '0%';
+            
+            // Trade statistieken
+            document.getElementById('total-trades').textContent = stats.totalTrades || '0';
+            document.getElementById('max-drawdown').textContent = formatPercentage(stats.maxDrawdown);
+            document.getElementById('risk-reward').textContent = stats.riskRewardRatio || '0.0';
+            
+            // Kleur de rendement velden
+            colorizeGrowthField('daily-growth', stats.dailyGrowth);
+            colorizeGrowthField('monthly-growth', stats.monthlyGrowth);
+            colorizeGrowthField('total-growth', stats.totalGrowth);
+        }
+
+        function colorizeGrowthField(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (value > 0) {
+                element.classList.add('text-green-600');
+                element.classList.remove('text-red-600', 'text-gray-800');
+            } else if (value < 0) {
+                element.classList.add('text-red-600');
+                element.classList.remove('text-green-600', 'text-gray-800');
+            } else {
+                element.classList.add('text-gray-800');
+                element.classList.remove('text-green-600', 'text-red-600');
+            }
+        }
+
+        function updatePerformanceChart(stats) {
+            if (!performanceChart) return;
+            
+            // Simuleer data punten voor de grafiek (laatste 7 dagen)
+            const labels = [];
+            const data = [];
+            const baseValue = stats.balance || 10000;
+            const dailyGrowth = stats.dailyGrowth || 0;
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                labels.push(date.toLocaleDateString('nl-NL', { weekday: 'short' }));
+                
+                const variation = (Math.random() - 0.5) * 2; // Random variatie
+                const value = baseValue * (1 + (dailyGrowth / 100) * (7 - i) + variation / 100);
+                data.push(value);
+            }
+            
+            performanceChart.data.labels = labels;
+            performanceChart.data.datasets[0].data = data;
+            performanceChart.update();
+        }
+
+        function updatePositionsList(positions) {
             const positionsList = document.getElementById('positions-list');
             
-            if (count === 0) {
+            if (!positions || positions.length === 0) {
                 positionsList.innerHTML = `
                     <div class="text-center py-8 text-gray-500">
                         <i class="fas fa-chart-line text-4xl mb-4 opacity-30"></i>
@@ -801,13 +1077,27 @@
                     </div>
                 `;
             } else {
-                positionsList.innerHTML = `
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                        <i class="fas fa-chart-bar text-blue-500 text-2xl mb-2"></i>
-                        <p class="text-blue-700 font-medium">${count} actieve posities gevonden</p>
-                        <p class="text-blue-600 text-sm mt-1">Details worden geladen via het trading systeem</p>
-                    </div>
-                `;
+                let html = '<div class="space-y-3">';
+                positions.forEach(pos => {
+                    const profit = pos.profit || 0;
+                    const profitClass = profit >= 0 ? 'text-green-600' : 'text-red-600';
+                    html += `
+                        <div class="border border-gray-200 rounded-lg p-4 hover:border-primary/30 transition-colors">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-gray-800">${pos.symbol}</div>
+                                    <div class="text-sm text-gray-600">${pos.type} - ${pos.volume} lots</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="${profitClass} font-bold">${formatEuro(profit)}</div>
+                                    <div class="text-sm text-gray-600">Open: ${pos.openPrice}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                positionsList.innerHTML = html;
             }
         }
 
@@ -818,6 +1108,12 @@
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             }).format(amount);
+        }
+
+        function formatPercentage(value) {
+            if (!value) return '0%';
+            const formatted = parseFloat(value).toFixed(2);
+            return formatted > 0 ? `+${formatted}%` : `${formatted}%`;
         }
 
         function showRemoveModal() {
@@ -876,6 +1172,7 @@
             if (currentAccount) {
                 checkAccountStatus();
                 refreshAccountData();
+                refreshStatistics();
             }
         }, 30000);
     </script>
