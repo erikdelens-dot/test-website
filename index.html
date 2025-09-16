@@ -1146,7 +1146,7 @@
                 warning: 'fa-exclamation-triangle'
             };
             
-            const toast = document.createElement('div');
+const toast = document.createElement('div');
             toast.className = `${colors[type]} px-6 py-4 rounded-xl shadow-lg flex items-center space-x-3 transform translate-x-full transition-transform duration-300 max-w-sm`;
             toast.innerHTML = `
                 <i class="fas ${icons[type]} text-lg"></i>
@@ -1166,6 +1166,50 @@
                     }
                 }, 300);
             }, 5000);
+        }
+
+        async function debugAccountStatus() {
+            if (!currentAccount) return;
+            
+            console.log('=== ACCOUNT DEBUG START ===');
+            console.log('Current Account:', currentAccount);
+            
+            try {
+                // Test 1: Check account status
+                console.log('Testing diagnose endpoint...');
+                const diagnoseResponse = await fetch(`${API_BASE}/copy/diagnose?accountId=${currentAccount.id}`);
+                const diagnoseData = await diagnoseResponse.json();
+                console.log('Diagnose Response:', diagnoseData);
+                
+                // Test 2: Check account metrics
+                console.log('Testing metrics endpoint...');
+                const metricsResponse = await fetch(`${API_BASE}/account-metrics?id=${currentAccount.id}`);
+                const metricsText = await metricsResponse.text();
+                console.log('Metrics Response Status:', metricsResponse.status);
+                console.log('Metrics Response Text:', metricsText);
+                
+                try {
+                    const metricsData = JSON.parse(metricsText);
+                    console.log('Metrics Data:', metricsData);
+                } catch (e) {
+                    console.error('Could not parse metrics response as JSON');
+                }
+                
+                // Test 3: Check statistics
+                console.log('Testing statistics endpoint...');
+                const statsResponse = await fetch(`${API_BASE}/account-statistics?id=${currentAccount.id}`);
+                const statsText = await statsResponse.text();
+                console.log('Stats Response Status:', statsResponse.status);
+                console.log('Stats Response Text:', statsText);
+                
+                showToast('Debug info logged to console. Check browser developer tools.', 'info');
+                
+            } catch (error) {
+                console.error('Debug Error:', error);
+                showToast(`Debug error: ${error.message}`, 'error');
+            }
+            
+            console.log('=== ACCOUNT DEBUG END ===');
         }
 
         // Auto-refresh every 30 seconds
