@@ -419,56 +419,57 @@
                 </div>
             </div>
 
-            <!-- Sidebar -->
-            <div class="space-y-6">
-                <div class="card p-6 card-hover">
-                    <div class="flex items-center space-x-3 mb-6">
-                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-chart-line text-primary"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800">Systeem Status</h3>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center py-2">
-                            <span class="text-gray-medium font-medium">Status:</span>
-                            <span id="copy-status" class="font-bold text-gray-500 px-3 py-1 rounded-full bg-gray-100 text-sm">Inactief</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2">
-                            <span class="text-gray-medium font-medium">Strategy:</span>
-                            <span class="font-bold text-primary bg-primary/10 px-3 py-1 rounded-full text-sm">67ko (EUR)</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2">
-                            <span class="text-gray-medium font-medium">Laatste sync:</span>
-                            <span id="last-sync" class="font-semibold text-gray-600 text-sm">Nooit</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card p-6 card-hover">
-                    <div class="flex items-center space-x-3 mb-6">
-                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-bolt text-primary"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800">Snelle Acties</h3>
-                    </div>
-                    <div class="space-y-3">
-                        <button id="sync-now" class="w-full btn-primary text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center">
-                            <i class="fas fa-sync mr-2"></i>
-                            Synchroniseer Nu
-                        </button>
-                        <button id="check-status" class="w-full btn-secondary text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center">
-                            <i class="fas fa-search mr-2"></i>
-                            Check Status
-                        </button>
-                        <button id="close-all-positions" class="w-full btn-danger text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center hidden">
-                            <i class="fas fa-times-circle mr-2"></i>
-                            Sluit Alle Posities
-                        </button>
-                    </div>
-                </div>
+<!-- Sidebar -->
+<div class="space-y-6">
+    <div class="card p-6 card-hover">
+        <div class="flex items-center space-x-3 mb-6">
+            <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                <i class="fas fa-chart-line text-primary"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800">Systeem Status</h3>
+        </div>
+        <div class="space-y-4">
+            <div class="flex justify-between items-center py-2">
+                <span class="text-gray-medium font-medium">Status:</span>
+                <span id="copy-status" class="font-bold text-gray-500 px-3 py-1 rounded-full bg-gray-100 text-sm">Inactief</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+                <span class="text-gray-medium font-medium">Strategy:</span>
+                <span class="font-bold text-primary bg-primary/10 px-3 py-1 rounded-full text-sm">67ko (EUR)</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+                <span class="text-gray-medium font-medium">Laatste sync:</span>
+                <span id="last-sync" class="font-semibold text-gray-600 text-sm">Nooit</span>
             </div>
         </div>
     </div>
+    <div class="card p-6 card-hover">
+        <div class="flex items-center space-x-3 mb-6">
+            <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                <i class="fas fa-bolt text-primary"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800">Snelle Acties</h3>
+        </div>
+        <div class="space-y-3">
+            <button id="sync-now" class="w-full btn-primary text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center">
+                <i class="fas fa-sync mr-2"></i>
+                Synchroniseer Nu
+            </button>
+            <button id="check-status" class="w-full btn-secondary text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center">
+                <i class="fas fa-search mr-2"></i>
+                Check Status
+            </button>
+            <button onclick="debugAccountStatus()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center">
+                <i class="fas fa-bug mr-2"></i>
+                Debug Account
+            </button>
+            <button id="close-all-positions" class="w-full btn-danger text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center hidden">
+                <i class="fas fa-times-circle mr-2"></i>
+                Sluit Alle Posities
+            </button>
+        </div>
+    </div>
+</div>
 
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-4"></div>
